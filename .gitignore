@@ -1,6 +1,6 @@
 _templates/
 _templates/*
-data/*
+data/*.db
 __pycache__/
 __pycache__/*
 .vscode/
