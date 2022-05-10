@@ -1,0 +1,302 @@
+<!DOCTYPE html>
+<html>
+
+<head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, shrink-to-fit=no">
+    <title>Config - Website Health</title>
+    <meta name="description" content="A simple tool aiming to check if a website is alive.
+
+Supports simple email and slack notifications.
+
+This app is intended not to run exposed. If you want to do so, please use any kind of authentication layer like Authelia.">
+    <link rel="stylesheet" href="assets/bootstrap/css/bootstrap.min.css">
+    <link rel="stylesheet" href="https://fonts.googleapis.com/css?family=Nunito:200,200i,300,300i,400,400i,600,600i,700,700i,800,800i,900,900i">
+    <link rel="stylesheet" href="https://use.fontawesome.com/releases/v5.12.0/css/all.css">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/4.7.0/css/font-awesome.min.css">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/ionicons/2.0.1/css/ionicons.min.css">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/material-design-icons/3.0.1/iconfont/material-icons.min.css">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/simple-line-icons/2.4.1/css/simple-line-icons.min.css">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/typicons/2.0.9/typicons.min.css">
+    <link rel="stylesheet" href="assets/fonts/fontawesome5-overrides.min.css">
+    <link rel="stylesheet" href="assets/css/Separator-with-icon.css">
+    <link rel="stylesheet" type="text/css" href="https://cdn.datatables.net/v/bs5/jszip-2.5.0/dt-1.11.4/b-2.2.2/b-colvis-2.2.2/b-html5-2.2.2/b-print-2.2.2/cr-1.5.5/date-1.1.1/fc-4.0.1/r-2.2.9/rr-1.2.8/sl-1.3.4/datatables.min.css"/>
+</head>
+
+<body id="page-top">
+    <div id="wrapper">
+        <nav class="navbar navbar-dark align-items-start sidebar sidebar-dark accordion bg-gradient-primary p-0">
+            <div class="container-fluid d-flex flex-column p-0"><a class="navbar-brand d-flex justify-content-center align-items-center sidebar-brand m-0" href="#" style="padding-top: 35px;">
+                    <div class="sidebar-brand-icon rotate-n-15"><i class="material-icons">local_hospital</i></div>
+                    <div class="sidebar-brand-text mx-3"><span>Website<br>Health</span></div>
+                </a>
+                <hr class="sidebar-divider my-0">
+                <ul class="navbar-nav text-light" id="accordionSidebar">
+                    <li class="nav-item"><a class="nav-link active" href="/"><i class="fas fa-tachometer-alt"></i><span>Status</span></a></li>
+                    <li class="nav-item"><a class="nav-link" href="/config"><i class="fas fa-table"></i><span>Config</span></a></li>
+                </ul>
+                <div class="text-center d-none d-md-inline"><button class="btn rounded-circle border-0" id="sidebarToggle" type="button"></button></div>
+            </div>
+        </nav> 
+        <div class="d-flex flex-column" id="content-wrapper">
+            <div id="content">
+                <nav class="navbar navbar-light navbar-expand bg-white shadow mb-1 topbar static-top">
+                    <div class="container-fluid">
+                        <div class="nav-item dropdown no-arrow">
+                            <h3 class="text-dark mb-4 pt-4">Config</h3>
+                        </div>  
+                        <ul class="navbar-nav flex-nowrap ms-auto">
+                            <li class="nav-item dropdown no-arrow mx-1">
+                                <div class="nav-item dropdown no-arrow">
+                                    <a class="dropdown-toggle nav-link" aria-expanded="false" data-bs-toggle="dropdown" href="#">
+                                        <span class="badge bg-danger badge-counter">3+</span>
+                                        <i class="fas fa-bell fa-fw"></i>
+                                    </a>
+                                    <div class="dropdown-menu dropdown-menu-end dropdown-list animated--grow-in">
+                                        <h6 class="dropdown-header bg-danger">alerts center</h6>
+                                        <a class="dropdown-item d-flex align-items-center" href="#">
+                                            <div class="me-3">
+                                                <div class="bg-danger icon-circle"><i class="material-icons text-white">error</i></div>
+                                            </div>
+                                            <div><span class="small text-gray-500">December 12, 2019</span>
+                                                <p>A new monthly report is ready to download!</p>
+                                            </div>
+                                        </a>
+                                    </div>
+                                </div>
+                            </li>
+                            <li class="nav-item dropdown no-arrow mx-1">
+                                <div class="shadow dropdown-list dropdown-menu dropdown-menu-end" aria-labelledby="alertsDropdown"></div>
+                            </li>
+                            <li class="nav-item dropdown no-arrow mx-1">
+                                <div class="nav-item dropdown no-arrow">
+                                    <span class="dropdown-toggle nav-link">
+                                        {% if check_status_mode == 'ON' %}
+                                        <button class="btn btn-primary btn-sm bg-success" type="button" id="toggle_status"><i class='fa fa-check-circle'></i> Online</button>
+                                        {% else %}
+                                        <button class="btn btn-primary btn-sm bg-danger" type="button" id="toggle_status"><i class='fa fa-times-circle'></i> Offline</button>
+                                        {% endif %}
+                                    </span>
+                                </div>
+                            </li>
+                        </ul>
+                    </div>
+                </nav>
+   
+                <div class="container-fluid">
+                    <div class="card shadow">
+                        <div class="card-body">
+                            <table id="sites_table" class="table table-striped table-bordered">
+                            <thead>
+                                <tr>
+                                    <th>Id</th>
+                                    <th>Host</th>
+                                    <th>Path</th>
+                                    <th>WP User</th>
+                                    <th>WP Key</th>
+                                    <th>Actions</th>
+                                </tr>
+                            </thead>
+                            <tfoot>
+                                <th>Id</th>
+                                <th>Host</th>
+                                <th>Path</th>
+                                <th>WP User</th>
+                                <th>WP Key</th>
+                                <th>Actions</th>
+                            </tfoot>
+                            </table>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            <!-- End content -->
+            <footer class="bg-white sticky-footer ">
+                <div class="container my-auto">
+                    <div class="text-center my-auto copyright"><span>Copyright © Raskitoma, 2022</span></div>
+                </div>
+            </footer>
+        </div>
+        <a class="border rounded d-inline scroll-to-top" href="#page-top"><i class="fas fa-angle-up"></i></a>
+    </div>
+    <div id="site_data" class="modal fade show" role="dialog" tabindex="-1" style="height: 716px;">
+        <div class="modal-dialog" role="document">
+            <div class="modal-content">
+                <div class="modal-header" style="background: linear-gradient(var(--bs-indigo), var(--bs-blue)), var(--bs-indigo);color: var(--bs-red);">
+                    <h4 id="modal_title" class="modal-title text-white">Modal Title</h4><button class="btn-close" type="button" data-bs-dismiss="modal" aria-label="Close"></button>
+                </div>
+                <div class="modal-body">
+                    <div class="row">
+                        <div class="col">
+                            <form>
+                                <div class="row">
+                                    <div class="col">
+                                        <div class="form-group mb-3"><label class="form-label"><strong>Host</strong></label><input class="form-control" type="text" placeholder="https://site.com" id="site_host" /></div>
+                                    </div>
+                                </div>
+                                <div class="row">
+                                    <div class="col">
+                                        <div class="form-group mb-3"><label class="form-label"><strong>Path</strong></label><input class="form-control" type="text" placeholder="/wp-json/wp/v2/plugins/" id="site_path" /></div>
+                                    </div>
+                                    <div class="col align-self-center">
+                                        <div class="form-group mb-3"><label class="form-label"><strong>WP User</strong></label><input class="form-control" type="text" placeholder="admin" id="site_user" /></div>
+                                    </div>
+                                </div>
+                                <input type="hidden" id="site_id">
+                                <input type="hidden" id="site_mode">
+                                <div class="row">
+                                    <div class="col">
+                                        <div class="form-group mb-3"><label class="form-label"><strong>Wordpress API Key</strong><br /></label><input class="form-control" type="password" id="site_wp_api" /></div>
+                                    </div>
+                                </div>
+                            </form>
+                        </div>
+                    </div>
+                </div>
+                <div class="modal-footer"><button class="btn btn-light" type="button" data-bs-dismiss="modal" id="Kill_Modal">Close</button><button class="btn btn-primary" type="button" id="Save_Data">Save</button></div>
+            </div>
+        </div>
+    </div>
+    <script src="https://code.jquery.com/jquery-3.6.0.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.1.3/dist/js/bootstrap.bundle.min.js"></script>
+    <script src="https://cdn.datatables.net/v/bs5/jszip-2.5.0/dt-1.11.4/b-2.2.2/b-colvis-2.2.2/b-html5-2.2.2/b-print-2.2.2/cr-1.5.5/date-1.1.1/fc-4.0.1/r-2.2.9/rr-1.2.8/sl-1.3.4/datatables.min.js"></script>
+    <script src="https://cdn.datatables.net/buttons/2.2.2/js/dataTables.buttons.min.js"></script>	
+    <script src="assets/js/bs-init.js"></script>
+    <script src="assets/js/theme.js"></script>
+    <script src="assets/js/config_actions.js"></script>
+    <script src="assets/js/main_actions.js"></script>
+    <script>
+        var table = $('#sites_table');
+        table.DataTable( {
+            ajax: function(d, cb) {
+                fetch('/sites')
+                .then(response=>response.json())
+                .then(data=>cb(data))
+                .catch(console.error)
+            },
+            procesing: true,
+            language: {
+                loadingRecords: '&nbsp;',
+                processing: '<i class="fa-solid fa-arrows-spin"></i>'
+            },
+            columns: [
+                { data: "id" },
+                { data: "host" },
+                { data: "path" },
+                { data: "user" },
+                { data: "wp_api" },
+                { data: "actions" },
+            ],
+            "columnDefs": [
+                {
+                    "targets": -1,
+                    "data": null,
+                    "defaultContent": " \
+                    <button class=\"btn btn-primary btn-sm bg-warning pr-2 pb-1 Edit\"><i class=\"fas fa-pencil-alt text-white\"></i></button> \
+                    <button class=\"btn btn-primary btn-sm bg-danger Delete\"><i class=\"fa fa-times-circle text-white\"></i></button> \
+                    "
+                },
+                {
+                    "targets": 4,
+                    createdCell: function (td, cellData, rowData, row, col) {
+                        $(td).css('color', 'gray');
+                        $(td).css('text-decoration', 'line-through');
+                        $(td).css('letter-spacing', '-5px');
+                        $(td).css('text-transform', 'uppercase');
+                        $(td).css('z-index', '-1');
+                        $(td).css('font-size', 'xx-small');
+
+                    }
+                },
+            ],
+            "paging": true,
+            "searching": true,
+            "pagingType": "full_numbers",
+            "order" : [
+                [1, "asc"]
+            ],
+            "createdRow": function ( row, data, index ) {
+                if ( data[0] == 0 ) {
+                     $(row).prop("disable", true);
+                     var mybuttons = $(row).find('button');
+                     mybuttons.each(function(index, value){
+                         $(value).prop("disable", true);
+                         $(value).prop("class", "btn btn-primary btn-sm bg-secondary");
+                     });
+                }                
+            },
+            "dom" : '<"toolbar">frtip'
+        } );
+
+        $("div.toolbar").html('<button class=\"btn btn-success btn-sm bg-success pr-2 pb-1 text-white\" id=\"add_site\"><i class=\"fas fa-plus-square text-white\"></i> Add Site</button>');
+
+        $("#add_site").click(function() {
+            prep_modal("Add Site", "", "", "", "", "", "ADD_SITE");
+        });
+
+        table.on( 'click', 'button', function () {           
+            var site_id = $(this).parents('tr').children('td:first-child').text();
+            var site_host = $(this).parents('tr').children('td:nth-child(2)').text();
+            var site_path = $(this).parents('tr').children('td:nth-child(3)').text();
+            var site_user = $(this).parents('tr').children('td:nth-child(4)').text();
+            var site_wp_api = $(this).parents('tr').children('td:nth-child(5)').text();
+            if ( site_id == 0 ){
+                return;
+            }
+            var kind = $(this).hasClass('Delete')
+            if ( kind ) {
+                // js popup to confirm delete
+                if ( confirm("Are you sure you want to delete site Id=" + site_id + "?") ) {
+                    $.ajax({
+                        url: "/sites/delete/" + site_id,
+                        type: "DELETE",
+                        success: function(result) {
+                            table.DataTable().ajax.reload();
+                        }
+                    });
+                }
+                
+            } else {
+                prep_modal("Editing " + site_host, site_id, site_host, site_path, site_user, site_wp_api);
+            }
+        });
+
+        function table_refresh() {
+            table.DataTable().ajax.reload();
+        }   
+
+        $("#Save_Data").click(function() {
+            var site_id = $('#site_id').val();
+            var site_host = $("#site_host").val();
+            var site_path = $("#site_path").val();
+            var site_user = $("#site_user").val();
+            var site_wp_api = $("#site_wp_api").val();
+            var site_mode = $("#site_mode").val();
+
+            var data = {
+                site_id: site_id,
+                site_host: site_host,
+                site_path: site_path,
+                site_user: site_user,
+                site_wp_api: site_wp_api
+            };
+
+            if (site_mode == "ADD_SITE") {
+                $.post("/sites", data, function(response) {
+                    //console.log(response);
+                });
+            } else {
+                $.post("/sites/edit/" + site_id, data, function(response) {
+                    //console.log(response);
+                });
+            }
+            console.log(table);
+            table_refresh();
+            $('#site_data').modal('hide');
+        });
+
+
+    </script>
+</body>
+
+</html>
